@@ -1,0 +1,141 @@
+version: '3.8'
+
+services:
+  transactional-clock:
+    container_name: transactional-clock
+    image: transactional-clock:1.0
+    ports:
+      - "5001:5001"
+    depends_on:
+      - mongodb-one
+      - mongodb-two
+      - mongodb-three
+    restart: always
+    entrypoint: [ "python3", "main.py" ]
+
+  mongodb-one:
+    container_name: mongodb-one
+    image: mongo:latest
+    ports:
+      - "27027:27027"
+    restart: always
+    entrypoint: [ "/usr/bin/mongod", "--bind_ip_all", "--port", "27027" ]
+
+  mongodb-two:
+    container_name: mongodb-two
+    image: mongo:latest
+    ports:
+      - "27028:27028"
+    depends_on:
+      - mongodb-one
+    restart: always
+    entrypoint: [ "/usr/bin/mongod", "--bind_ip_all", "--port", "27028" ]
+
+  mongodb-three:
+    container_name: mongodb-three
+    image: mongo:latest
+    ports:
+      - "27029:27029"
+    depends_on:
+      - mongodb-one
+    restart: always
+    entrypoint: [ "/usr/bin/mongod", "--bind_ip_all", "--port", "27029" ]
+
+  zookeeper:
+    image: wurstmeister/zookeeper
+    container_name: zookeeper
+    ports:
+      - 2181:2181
+    environment:
+      ZOO_MY_ID: 1
+    volumes:
+      - ./volumes/zookeeper:/opt/zookeeper-3.4.13/data
+
+  kafka:
+    image: wurstmeister/kafka
+    container_name: kafka
+    hostname: kafka
+    ports:
+      - 9092:9092
+    environment:
+      KAFKA_LOG_DIRS: /logs
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ADVERTISED_HOST_NAME: kafka
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:29092,PLAINTEXT_HOST://localhost:9092
+      KAFKA_LISTENERS: 'PLAINTEXT://kafka:29092,PLAINTEXT_HOST://0.0.0.0:9092'
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_CREATE_TOPICS_SEPARATOR: " "
+      KAFKA_CREATE_TOPICS: >
+        roles.creation:1:1:delete
+        customers.registration:1:1:delete
+        customers.update:1:1:delete
+        workers.registration:1:1:delete
+        users.deletion:1:1:delete
+        accounts.creation:1:1:delete
+        accounts.deletion:1:1:delete
+        transactions.creation:1:1:delete
+    volumes:
+      - ./volumes/kafka:/logs
+    healthcheck:
+      test: ["CMD-SHELL", "nc -z localhost 9092 || exit 1"]
+      start_period: 40s
+      interval: 5s
+      timeout: 10s
+      retries: 5
+
+  kafka-ui:
+    container_name: kafka-ui
+    image: provectuslabs/kafka-ui:latest
+    ports:
+      - 8080:8080
+    depends_on:
+      - kafka
+    environment:
+      DYNAMIC_CONFIG_ENABLED: 'true'
+      KAFKA_CLUSTERS_0_NAME: distributed_banking
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:29092
+
+  redis:
+    container_name: redis
+    image: redis:7.0.15
+    volumes:
+      - ./volumes/redis:/data
+      - ./configurations/redis.conf:/usr/local/etc/redis/redis.conf
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: redis-cli ping | grep PONG
+      start_period: 5s
+      interval: 5s
+      timeout: 10s
+      retries: 5
+    command: redis-server /usr/local/etc/redis/redis.conf
+
+  distributed-banking-processing-tc:
+    container_name: distributed-banking-processing-tc
+    image: distributed-banking/processing-tc:1.0
+    ports:
+      - 5287:80
+    depends_on:
+      kafka:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: always
+    entrypoint: [ "dotnet", "DistributedBanking.Processing.dll" ]
+
+  distributed-banking-client:
+    container_name: distributed-banking-client
+    image: distributed-banking/client:1.0
+    ports:
+      - 5221:80
+    depends_on:
+      kafka:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      distributed-banking-processing-tc:
+        condition: service_started
+    restart: always
+    entrypoint: [ "dotnet", "DistributedBanking.Client.API.dll" ]

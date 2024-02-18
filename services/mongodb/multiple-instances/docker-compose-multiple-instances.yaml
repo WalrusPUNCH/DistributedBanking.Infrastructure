@@ -1,0 +1,48 @@
+﻿version: '3.8'
+
+services:
+  transactional-clock:
+    container_name: transactional-clock
+    image: transactional_clock:1.0
+    ports: 
+      - "5001:5001"
+    depends_on:
+      - mongodb-one
+      - mongodb-two
+      - mongodb-three      
+    restart: always
+    entrypoint: [ "python3", "main.py" ]
+
+  mongodb-one:
+    container_name: mongodb-one
+    image: mongo:latest
+    volumes:
+      - ./volumes/mongodb-one:/data/db
+    ports:
+      - "27027:27027"
+    restart: always
+    entrypoint: [ "/usr/bin/mongod", "--bind_ip_all", "--port", "27027"]
+
+  mongodb-two:
+    container_name: mongodb-two
+    image: mongo:latest
+    volumes:
+      - ./volumes/mongodb-two:/data/db
+    ports:
+      - "27028:27028"
+    depends_on:
+      - mongodb-one
+    restart: always
+    entrypoint: [ "/usr/bin/mongod", "--bind_ip_all", "--port", "27028" ]
+
+  mongodb-three:
+    container_name: mongodb-three
+    image: mongo:latest
+    volumes:
+      - ./volumes/mongodb-three:/data/db
+    ports:
+      - "27029:27029"
+    depends_on:
+      - mongodb-one
+    restart: always
+    entrypoint: [ "/usr/bin/mongod", "--bind_ip_all", "--port", "27029" ]

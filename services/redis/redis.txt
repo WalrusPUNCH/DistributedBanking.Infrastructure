@@ -1,0 +1,10 @@
+docker run -d -v ./volume/:/data --name redis -p 6379:6379 redis/redis-stack-server:7.2.0-v8
+
+https://raphaeldelio.medium.com/understanding-persistence-in-redis-aof-rdb-on-docker-dcc176ea439
+
+https://redis.io/docs/management/persistence/
+
+https://hub.docker.com/_/redis
+
+https://forums.docker.com/t/whats-the-correct-way-to-mount-a-volume-on-docker-for-windows/58494/4
+

@@ -1,0 +1,17 @@
+https://medium.com/simform-engineering/set-up-kafka-ecosystem-on-local-machine-1a00a436c0ba
+
+
+docker-compose -f kafka-compose.yml up
+
+docker-compose -f kafka-compose.yml down
+
+commands: https://gist.github.com/DevoKun/01b6c9963d5508579f4cbd75d52640a9
+detailed commands: https://kafka.apache.org/quickstart
+
+docker exec -it kafka kafka-console-producer.sh --broker-list localhost:9092 --topic teeeeest
+
+
+docker compose -f kafka-replicas-compose.yml up --scale kafka=2
+
+
+config from here: https://github.com/provectus/kafka-ui/blob/master/documentation/compose/kafka-ui.yaml

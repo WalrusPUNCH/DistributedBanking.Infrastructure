@@ -1,0 +1,4 @@
+docker-compose -f distributed-banking-tc-docker-compose.yaml up -d
+docker-compose -f distributed-banking-tc-docker-compose.yaml down
+
+clear caches: https://depot.dev/blog/docker-clear-cache
