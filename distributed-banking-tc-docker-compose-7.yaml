@@ -3,13 +3,17 @@ version: '3.8'
 services:
   transactional-clock:
     container_name: transactional-clock
-    image: transactional-clock:1.0
+    image: transactional-clock:1.7
     ports:
       - "5001:5001"
     depends_on:
       - mongodb-one
       - mongodb-two
       - mongodb-three
+      - mongodb-four
+      - mongodb-five
+      - mongodb-six
+      - mongodb-seven
     restart: always
     entrypoint: [ "python3", "main.py" ]
 
@@ -40,6 +44,46 @@ services:
       - mongodb-one
     restart: always
     entrypoint: [ "/usr/bin/mongod", "--bind_ip_all", "--port", "27029" ]
+
+  mongodb-four:
+    container_name: mongodb-four
+    image: mongo:latest
+    ports:
+      - "27030:27030"
+    depends_on:
+      - mongodb-two
+    restart: always
+    entrypoint: [ "/usr/bin/mongod", "--bind_ip_all", "--port", "27030" ]
+
+  mongodb-five:
+    container_name: mongodb-five
+    image: mongo:latest
+    ports:
+      - "27031:27031"
+    depends_on:
+      - mongodb-two
+    restart: always
+    entrypoint: [ "/usr/bin/mongod", "--bind_ip_all", "--port", "27031" ]
+
+  mongodb-six:
+    container_name: mongodb-six
+    image: mongo:latest
+    ports:
+      - "27032:27032"
+    depends_on:
+      - mongodb-two
+    restart: always
+    entrypoint: [ "/usr/bin/mongod", "--bind_ip_all", "--port", "27032" ]
+
+  mongodb-seven:
+    container_name: mongodb-seven
+    image: mongo:latest
+    ports:
+      - "27033:27033"
+    depends_on:
+      - mongodb-two
+    restart: always
+    entrypoint: [ "/usr/bin/mongod", "--bind_ip_all", "--port", "27033" ]
 
   zookeeper:
     image: wurstmeister/zookeeper
@@ -120,8 +164,6 @@ services:
         condition: service_healthy
     restart: always
     entrypoint: [ "dotnet", "DistributedBanking.Processing.dll" ]
-    extra_hosts:
-    - "host.docker.internal:host-gateway"
 
   distributed-banking-client:
     container_name: distributed-banking-client
@@ -137,18 +179,3 @@ services:
         condition: service_started
     restart: always
     entrypoint: [ "dotnet", "DistributedBanking.Client.API.dll" ]
-
-  # distributed-banking-client-2:
-    # container_name: distributed-banking-client-2
-    # image: distributed-banking/client:1.0
-    # ports:
-      # - 5222:80
-    # depends_on:
-      # kafka:
-        # condition: service_healthy
-      # redis:
-        # condition: service_healthy
-      # distributed-banking-processing-tc:
-        # condition: service_started
-    # restart: always
-    # entrypoint: [ "dotnet", "DistributedBanking.Client.API.dll" ]

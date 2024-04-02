@@ -27,7 +27,7 @@ services:
     ports:
       - "27029:27029"
     depends_on:
-      - mongodb-one
+      - mongodb-two
     restart: always
     entrypoint: [ "/usr/bin/mongod", "--bind_ip_all", "--replSet", "banking_set", "--port", "27029" ]
 
@@ -38,8 +38,8 @@ services:
       - 2181:2181
     environment:
       ZOO_MY_ID: 1
-    volumes:
-      - ./volumes/rs/zookeeper:/opt/zookeeper-3.4.13/data
+    #volumes:
+    #  - ./volumes/rs/zookeeper:/opt/zookeeper-3.4.13/data
 
   kafka:
     image: wurstmeister/kafka
@@ -65,13 +65,11 @@ services:
         accounts.creation:1:1:delete
         accounts.deletion:1:1:delete
         transactions.creation:1:1:delete
-    volumes:
-      - ./volumes/rs/kafka:/logs
+    #volumes:
+    #  - ./volumes/rs/kafka:/logs
     healthcheck:
       test: ["CMD-SHELL", "nc -z localhost 9092 || exit 1"]
-      start_period: 40s
-      interval: 5s
-      timeout: 10s
+      interval: 30s
       retries: 5
 
   kafka-ui:
@@ -90,15 +88,13 @@ services:
     container_name: redis
     image: redis:7.0.15
     volumes:
-      - ./volumes/rs/redis:/data
+    #  - ./volumes/rs/redis:/data
       - ./configurations/redis.conf:/usr/local/etc/redis/redis.conf
     ports:
       - "6379:6379"
     healthcheck:
       test: redis-cli ping | grep PONG
-      start_period: 5s
-      interval: 5s
-      timeout: 10s
+      interval: 10s
       retries: 5
     command: redis-server /usr/local/etc/redis/redis.conf
 
@@ -108,10 +104,16 @@ services:
     ports:
       - 5147:80
     depends_on:
+      mongodb-three:
+        condition: service_started
       kafka:
         condition: service_healthy
       redis:
         condition: service_healthy
+    healthcheck:
+      test: "true"
+      interval: 30s
+      retries: 5
     restart: always
     entrypoint: [ "dotnet", "DistributedBanking.Processing.ReplicaSet.dll" ]
 
@@ -129,3 +131,18 @@ services:
         condition: service_started
     restart: always
     entrypoint: [ "dotnet", "DistributedBanking.Client.API.dll" ]
+
+  # distributed-banking-client-2:
+    # container_name: distributed-banking-client-2
+    # image: distributed-banking/client:1.0
+    # ports:
+      # - 5222:80
+    # depends_on:
+      # kafka:
+        # condition: service_healthy
+      # redis:
+        # condition: service_healthy
+      # distributed-banking-processing-rs:
+        # condition: service_started
+    # restart: always
+    # entrypoint: [ "dotnet", "DistributedBanking.Client.API.dll" ]

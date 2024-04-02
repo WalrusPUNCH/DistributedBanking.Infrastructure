@@ -1,17 +1,17 @@
 ﻿version: '3.8'
 
 services:
-  transactional_clock:
-    container_name: transactional-clock
-    image: transactional-clock:1.0
-    ports:
-      - "5001:5001"
-    depends_on:
-      - mongodb-one
-      - mongodb-two
-      - mongodb-three
-    restart: always
-    entrypoint: [ "python3", "main.py" ]
+  # transactional_clock:
+    # container_name: transactional-clock
+    # image: transactional-clock:1.0
+    # ports:
+      # - "5001:5001"
+    # depends_on:
+      # - mongodb-one
+      # - mongodb-two
+      # - mongodb-three
+    # restart: always
+    # entrypoint: [ "python3", "main.py" ]
 
   mongodb-one:
     container_name: mongodb-one

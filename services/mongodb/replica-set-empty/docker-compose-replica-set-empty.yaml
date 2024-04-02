@@ -27,6 +27,6 @@ services:
     ports:
       - "27029:27029"
     depends_on:
-      - mongodb-one      
+      - mongodb-two      
     restart: always
     entrypoint: [ "/usr/bin/mongod", "--bind_ip_all", "--replSet", "banking_set", "--port", "27029" ]
